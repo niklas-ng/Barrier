@@ -145,7 +145,6 @@ class ListBench2{
 				catch(java.util.concurrent.BrokenBarrierException e){
 					e.printStackTrace();
 					//System.exit(-1);
-					sd
 				}
 				
 				return;
