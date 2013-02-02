@@ -140,11 +140,11 @@ class ListBench2{
 				}
 				catch(InterruptedException e){
 					e.printStackTrace();
-					System.exit(-1);
+					//System.exit(-1);
 				}
 				catch(java.util.concurrent.BrokenBarrierException e){
 					e.printStackTrace();
-					System.exit(-1);
+					//System.exit(-1);
 				}
 				
 				return;
