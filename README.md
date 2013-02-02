@@ -5,7 +5,8 @@ Scripts for Java Benchmarks and some Java Files for testing JVM scalability when
 
 Mohsen Koohi Esfahani (koohi @@@  burge ... ir )
 
-License:T
+License:
+
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
