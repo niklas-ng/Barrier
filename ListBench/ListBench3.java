@@ -1,7 +1,7 @@
 import java.util.Random;
-import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicInteger;
 
-class ListBench2{
+class ListBench3{
 	private long getArgValue(String args[],int index, String def){
 		long value;
 		String val_str=def;
@@ -36,7 +36,7 @@ class ListBench2{
 	}
 	static public void main(String args[]){
 	
-		new ListBench2(args);
+		new ListBench3(args);
 		
 		System.exit(0);
 	}
@@ -50,6 +50,7 @@ class ListBench2{
 	private volatile long [] results;
 	private volatile int results_index;
 	private volatile long[] dur;
+	private volatile AtomicInteger aint;
 	
 	void readArgs(String args[]){
 		
@@ -76,7 +77,7 @@ class ListBench2{
 		return;
 	}
 	
-	public ListBench2(String args[]){
+	public ListBench3(String args[]){
 		
 		readArgs(args);
 	
@@ -94,68 +95,61 @@ class ListBench2{
 		class MyThread extends Thread{
 			int index;
 			long [] duration;
-			CyclicBarrier cb;
 			int tn;
 			
-			public MyThread(int in, long[] dur, CyclicBarrier barr){
+			public MyThread(int in, long[] dur){
 				index=in;
 				duration=dur;
-				cb=barr;
 				tn=dur.length;
 			}
 			
 			public void run(){
-				try{
-					cb.await();
 				
-					long start=System.nanoTime();
+				aint.incrementAndGet();
+				
+				System.err.println("Thread "+index+": I'm ready");System.err.flush();
+				
+				while(aint.get()<=tn)
+					;
+			
+				long start=System.nanoTime();
+				
+				int len=array.length;
+				int mylen=len/tn;
+				int arr_offset=mylen*index;
+				
+				char [][] myarray=new char[mylen][];
+				for(int i=0;i<mylen;i++)
+					myarray[i]=array[arr_offset+i];
+				
+				Random rand=new Random();
+				char temp[];
+				//String s="";
+				for(long i=0;i<substitutions;i++){
+					//int j=((int)(2*i))%mylen;
+					//int k=((int)(2*i+1))%mylen;
+					int j=rand.nextInt(mylen);
+					int k=rand.nextInt(mylen);
 					
-					int len=array.length;
-					int mylen=len/tn;
-					int arr_offset=mylen*index;
-					
-					char [][] myarray=new char[mylen][];
-					for(int i=0;i<mylen;i++)
-						myarray[i]=array[arr_offset+i];
-					
-					Random rand=new Random();
-					char temp[];
-					//String s="";
-					for(long i=0;i<substitutions;i++){
-						int j=((int)(2*i))%mylen;
-						int k=((int)(2*i+1))%mylen;
-						//int j=rand.nextInt(mylen);
-						//int k=rand.nextInt(mylen);
-						
-						temp=myarray[j];
-						myarray[j]=array[arr_offset+k];
-						array[arr_offset+k]=temp;
-						//s=s+","+(arr_offset+k);
-					}
-					
-					long dur=System.nanoTime()-start;
-					
-					System.out.println("Thread "+index+" Execution Time: "+(dur/(1000000))+"ms");
-					//System.out.println("Indexes accessed by thread "+index+" are: "+s);
-					System.out.flush();
-					//System.out.println("Accessing "+arr_offset+" - "+(arr_offset+mylen-1));
-					
-					duration[index]=dur;
-				}
-				catch(InterruptedException e){
-					e.printStackTrace();
-					//System.exit(-1);
-				}
-				catch(java.util.concurrent.BrokenBarrierException e){
-					e.printStackTrace();
-					//System.exit(-1);
+					temp=myarray[j];
+					myarray[j]=array[arr_offset+k];
+					array[arr_offset+k]=temp;
+					//s=s+","+(arr_offset+k);
 				}
 				
+				long dur=System.nanoTime()-start;
+				
+				System.out.println("Thread "+index+" Execution Time: "+(dur/(1000000))+"ms");
+				//System.out.println("Indexes accessed by thread "+index+" are: "+s);
+				System.out.flush();
+				//System.out.println("Accessing "+arr_offset+" - "+(arr_offset+mylen-1));
+				
+				duration[index]=dur;
+							
 				return;
 			}
 		}
 		
-		CyclicBarrier barr=new CyclicBarrier(threads_num);
 		for(int i=0;i<=iters;i++){
 			System.out.println();
 			System.gc();
@@ -165,12 +159,23 @@ class ListBench2{
 			Thread[] threads=new Thread[threads_num];
 			dur=new long[threads_num];
 			
+			aint=new AtomicInteger(0);
 			
 			for(int j=0;j<threads_num;j++){
-				threads[j]=new MyThread(j,dur,barr);
+				threads[j]=new MyThread(j,dur);
 				threads[j].start();
 			}
 			
+			while(aint.get()!=threads_num)
+				;
+			
+			try{
+				Thread.currentThread().sleep(100);
+			}catch(Exception e){}
+				
+			System.err.println("Main: All ready");System.err.flush();
+				
+			aint.incrementAndGet();
 			
 			try{
 				for(int j=0;j<threads_num;j++)
